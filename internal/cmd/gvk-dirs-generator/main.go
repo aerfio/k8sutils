@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"slices"
+	"sort"
 	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -193,7 +194,7 @@ func run() error {
 		for _, elem := range input.versionedPackageFns {
 			pckg := fmt.Sprintf("%s%sgvk", input.pckgRoot, elem.gv.Version)
 			outFile := fmt.Sprintf("./%s/%s.go", pckg, pckg)
-			if err := spitOut(pckg, fmt.Sprintf("k8s.io/api/%s/%s", input.pckgRoot, elem.gv.Version), elem.gv, elem.ignoredKinds, outFile, elem.addToSchemeFn); err != nil {
+			if err := createPackage(pckg, fmt.Sprintf("k8s.io/api/%s/%s", input.pckgRoot, elem.gv.Version), elem.gv, elem.ignoredKinds, outFile, elem.addToSchemeFn); err != nil {
 				return err
 			}
 		}
@@ -222,6 +223,7 @@ func groupObjAndList(knownTypes map[string]reflect.Type) []string {
 			nonLists = append(nonLists, kind)
 		}
 	}
+	sort.Strings(nonLists)
 	for _, elem := range nonLists {
 		out = append(out, elem)
 		if slices.Contains(lists, elem+"List") {
@@ -234,7 +236,7 @@ func groupObjAndList(knownTypes map[string]reflect.Type) []string {
 	return out
 }
 
-func spitOut(pckg, k8sPackage string, gv schema.GroupVersion, ignoreKinds []string, outFilePath string, addToSchemeFn func(*runtime.Scheme) error) error {
+func createPackage(pckg, k8sPackage string, gv schema.GroupVersion, ignoreKinds []string, outFilePath string, addToSchemeFn func(*runtime.Scheme) error) error {
 	scheme := runtime.NewScheme()
 	if err := addToSchemeFn(scheme); err != nil {
 		return err

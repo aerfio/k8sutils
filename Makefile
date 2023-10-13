@@ -2,11 +2,11 @@ CURRENT_DIR = $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 GOBIN = $(CURRENT_DIR)/bin
 
 .PHONY: all
-all: run fmt
+all: generate fmt
 
-.PHONY: run
-run:
-	go run .
+.PHONY: generate
+generate:
+	go run ./internal/cmd/gvk-dirs-generator
 
 GOFUMPT_VERSION ?= v0.5.0
 GOFUMPT = ${GOBIN}/gofumpt-${GOFUMPT_VERSION}

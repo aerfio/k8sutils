@@ -1,0 +1,30 @@
+name: CI
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    branches: ["**"]
+  push:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+      - name: verify go modules
+        run: |
+          set -x
+          go mod verify
+          go mod tidy
+          git diff --exit-code
+      - name: verify generated files
+        run: |
+          make all
+          git diff --exit-code
