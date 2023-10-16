@@ -1,6 +1,6 @@
 module aerf.io/k8sutils
 
-go 1.21
+go 1.21.3
 
 require (
 	k8s.io/api v0.28.2
