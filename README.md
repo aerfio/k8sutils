@@ -1,6 +1,6 @@
-# gvks
+# k8sutils
 
-Package `aerf.io/gvks` exports GVKs of particular types from `k8s.io/api` package.
+Package `aerf.io/k8sutils` exports GVKs of particular types from `k8s.io/api` package. Apart from that there are some useful utility functions in the root package.
 
 ## Contributing
 
