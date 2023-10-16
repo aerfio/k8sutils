@@ -1,0 +1,8 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    groups:
+      k8s-deps:
+        patterns:
+          - "k8s.io/*"

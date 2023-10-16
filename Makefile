@@ -2,7 +2,7 @@ CURRENT_DIR = $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 GOBIN = $(CURRENT_DIR)/bin
 
 .PHONY: all
-all: generate fmt
+all: generate fmt test
 
 .PHONY: generate
 generate:
@@ -18,3 +18,6 @@ ${GOFUMPT}:
 fmt: ${GOFUMPT}
 	${GOFUMPT} -w -extra .
 
+.PHONY: test
+test:
+	go test ./... -race -v
