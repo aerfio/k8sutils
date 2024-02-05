@@ -1,9 +1,11 @@
 package k8sutils
 
 import (
+	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 type ObjectList interface {
@@ -33,4 +35,13 @@ func GetListObjects[V Object[T], T any](list ObjectList) ([]V, error) {
 		objList = append(objList, out)
 	}
 	return objList, nil
+}
+
+func AddTypeInformationToObject(scheme *runtime.Scheme, obj runtime.Object) error {
+	gvk, err := apiutil.GVKForObject(obj, scheme)
+	if err != nil {
+		return fmt.Errorf("failed to get GVK for %T: %w", obj, err)
+	}
+	obj.GetObjectKind().SetGroupVersionKind(gvk)
+	return nil
 }
