@@ -2,11 +2,12 @@ package config
 
 import (
 	"fmt"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"os/user"
 	"path/filepath"
+
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 // GetConfig is a copy of "sigs.k8s.io/controller-runtime"/pkg/client/config.GetConfig without the dependency on other packages of this library
