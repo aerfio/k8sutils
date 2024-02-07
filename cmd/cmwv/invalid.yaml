@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bad-whitespace
+  namespace: default
+data:
+  key: |
+    whitespace to the right ->        
+    some text
+  key2: |
+    whitespace below:
+                   
+    some content below trailing whitespace
+  key3: "data\t\t<-sometabs"
