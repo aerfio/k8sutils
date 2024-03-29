@@ -368,7 +368,7 @@ func (k *K8sClient) Status() client.SubResourceWriter {
 
 func (k *K8sClient) SubResource(subResource string) client.SubResourceClient {
 	return &K8sSubresourceClient{
-		inner:                 k.SubResource(subResource),
+		inner:                 k.inner.SubResource(subResource),
 		groupVersionKindForFn: k.GroupVersionKindFor,
 		tracer:                k.traceProvider.Tracer(fmt.Sprintf("KubernetesClient.subresource.%s", subResource)),
 	}
