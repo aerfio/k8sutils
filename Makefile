@@ -25,7 +25,20 @@ fmt: ${GOFUMPT} ${GCI}
 	$(GOFUMPT) -w -extra .
 	$(GCI) write . --skip-generated -s standard -s default -s "prefix(${shell go list -m})" -s blank -s dot --custom-order --skip-vendor
 
-
 .PHONY: test
 test:
 	go test ./... -race -v
+
+bin/golangci-lint-install.sh:
+	mkdir -p "bin"
+	curl -fL "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh" -o "$@"
+	chmod +x "$@"
+
+GOLANGCI_LINT_VERSION = v1.57.1
+GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint-${GOLANGCI_LINT_VERSION}
+${GOLANGCI_LINT}: bin/golangci-lint-install.sh
+	./bin/golangci-lint-install.sh -b $(abspath bin) ${GOLANGCI_LINT_VERSION}
+	mv ./bin/golangci-lint ${GOLANGCI_LINT}
+
+lint: ${GOLANGCI_LINT}
+	$(GOLANGCI_LINT) run --config ${PWD}/.golangci.yml
