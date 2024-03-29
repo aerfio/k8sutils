@@ -15,13 +15,21 @@ import (
 )
 
 type K8sClient struct {
-	inner         client.Client
-	tracer        trace.Tracer
-	traceProvider trace.TracerProvider
+	inner                  client.Client
+	tracer                 trace.Tracer
+	traceProvider          trace.TracerProvider
+	objectIdentityExtactor objectIdentityExtactor
 }
 
 func NewK8sClient(inner client.Client, traceProvider trace.TracerProvider) client.Client {
-	return &K8sClient{inner: inner, tracer: traceProvider.Tracer("KubernetesClient"), traceProvider: traceProvider}
+	return &K8sClient{
+		inner:         inner,
+		tracer:        traceProvider.Tracer("KubernetesClient"),
+		traceProvider: traceProvider,
+		objectIdentityExtactor: objectIdentityExtactor{
+			groupVersionKindForFn: inner.GroupVersionKindFor,
+		},
+	}
 }
 
 func handleGetOptions(span trace.Span, opts ...client.GetOption) {
@@ -72,13 +80,9 @@ func (k *K8sClient) Get(ctx context.Context, key client.ObjectKey, obj client.Ob
 	return nil
 }
 
-func (k *K8sClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
-	sctx, span := k.tracer.Start(ctx, "List")
-	defer span.End()
-
-	listOpts := &client.ListOptions{}
-	for _, opt := range opts {
-		opt.ApplyToList(listOpts)
+func handleListOpts(span trace.Span, listOpts *client.ListOptions) {
+	if listOpts == nil {
+		return
 	}
 	if listOpts.Namespace != "" {
 		span.SetAttributes(attribute.String("listOption.namespace", listOpts.Namespace))
@@ -95,6 +99,17 @@ func (k *K8sClient) List(ctx context.Context, list client.ObjectList, opts ...cl
 	if listOpts.Continue != "" {
 		span.SetAttributes(attribute.String("listOption.continue", listOpts.Continue))
 	}
+}
+
+func (k *K8sClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	sctx, span := k.tracer.Start(ctx, "List")
+	defer span.End()
+
+	listOpts := &client.ListOptions{}
+	for _, opt := range opts {
+		opt.ApplyToList(listOpts)
+	}
+	handleListOpts(span, listOpts)
 
 	gvk, err := k.GroupVersionKindFor(list)
 	if err != nil {
@@ -116,7 +131,6 @@ func (k *K8sClient) List(ctx context.Context, list client.ObjectList, opts ...cl
 	}
 
 	span.AddEvent("successfully listed objects")
-
 	span.SetAttributes(attribute.Int("list.len", meta.LenList(list)))
 
 	return nil
@@ -172,22 +186,9 @@ func (k *K8sClient) Create(ctx context.Context, obj client.Object, opts ...clien
 	return nil
 }
 
-func (k *K8sClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
-	sctx, span := k.tracer.Start(ctx, "Delete", trace.WithAttributes(attribute.String("object.name", obj.GetName())))
-	defer span.End()
-
-	if ns := obj.GetNamespace(); ns != "" {
-		span.SetAttributes(attribute.String("object.namespace", ns))
-	}
-	gvk, err := k.GroupVersionKindFor(obj)
-	if err != nil {
-		span.AddEvent("failed to get GVK for object", trace.WithAttributes(attribute.String("error", err.Error())))
-	} else {
-		span.SetAttributes(
-			attribute.String("object.group", gvk.Group),
-			attribute.String("object.version", gvk.Version),
-			attribute.String("object.kind", gvk.Kind),
-		)
+func handleDeleteOptions(span trace.Span, opts ...client.DeleteOption) {
+	if len(opts) == 0 {
+		return
 	}
 
 	deleteOpts := &client.DeleteOptions{}
@@ -195,24 +196,34 @@ func (k *K8sClient) Delete(ctx context.Context, obj client.Object, opts ...clien
 		opt.ApplyToDelete(deleteOpts)
 	}
 
-	metav1DeleteOpts := deleteOpts.AsDeleteOptions()
-	if len(metav1DeleteOpts.DryRun) > 0 {
-		span.SetAttributes(attribute.StringSlice("deleteOption.dryRun", metav1DeleteOpts.DryRun))
+	if len(deleteOpts.DryRun) > 0 {
+		span.SetAttributes(attribute.StringSlice("deleteOption.dryRun", deleteOpts.DryRun))
 	}
-	if pp := metav1DeleteOpts.PropagationPolicy; pp != nil {
+	if pp := deleteOpts.PropagationPolicy; pp != nil {
 		span.SetAttributes(attribute.String("deleteOption.propagationPolicy", string(*pp)))
 	}
-	if pre := metav1DeleteOpts.Preconditions; pre != nil {
+	if pre := deleteOpts.Preconditions; pre != nil {
 		if pre.ResourceVersion != nil {
 			span.SetAttributes(attribute.String("deleteOption.preconditions.resourceVersion", *pre.ResourceVersion))
 		}
 		if pre.UID != nil {
-			span.SetAttributes(attribute.String("deleteOption.preconditions.resourceVersion", string(*pre.UID)))
+			span.SetAttributes(attribute.String("deleteOption.preconditions.uid", string(*pre.UID)))
 		}
 	}
-	if metav1DeleteOpts.GracePeriodSeconds != nil {
-		span.SetAttributes(attribute.Int64("deleteOption.gracePeriodSeconds", *metav1DeleteOpts.GracePeriodSeconds))
+	if deleteOpts.GracePeriodSeconds != nil {
+		span.SetAttributes(attribute.Int64("deleteOption.gracePeriodSeconds", *deleteOpts.GracePeriodSeconds))
 	}
+}
+
+func (k *K8sClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+	sctx, span := k.tracer.Start(ctx, "Delete", trace.WithAttributes(attribute.String("object.name", obj.GetName())))
+	defer span.End()
+
+	if ns := obj.GetNamespace(); ns != "" {
+		span.SetAttributes(attribute.String("object.namespace", ns))
+	}
+	k.objectIdentityExtactor.handleClientObjectAttrs(span, false, obj)
+	handleDeleteOptions(span, opts...)
 
 	if err := k.inner.Delete(sctx, obj, opts...); err != nil {
 		reason := apierrors.ReasonForError(err)
@@ -230,33 +241,21 @@ func handleUpdateOpts(span trace.Span, opts *metav1.UpdateOptions) {
 		return
 	}
 	if len(opts.DryRun) > 0 {
-		span.SetAttributes(attribute.StringSlice("patchOption.dryRun", opts.DryRun))
+		span.SetAttributes(attribute.StringSlice("updateOption.dryRun", opts.DryRun))
 	}
 	if fm := opts.FieldManager; fm != "" {
-		span.SetAttributes(attribute.String("patchOption.fieldManager", fm))
+		span.SetAttributes(attribute.String("updateOption.fieldManager", fm))
 	}
 	if fv := opts.FieldValidation; fv != "" {
-		span.SetAttributes(attribute.String("createOption.fieldValidation", fv))
+		span.SetAttributes(attribute.String("updateOption.fieldValidation", fv))
 	}
 }
 
 func (k *K8sClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	sctx, span := k.tracer.Start(ctx, "Update", trace.WithAttributes(attribute.String("object.name", obj.GetName())))
+	sctx, span := k.tracer.Start(ctx, "Update")
 	defer span.End()
 
-	if ns := obj.GetNamespace(); ns != "" {
-		span.SetAttributes(attribute.String("object.namespace", ns))
-	}
-	gvk, err := k.GroupVersionKindFor(obj)
-	if err != nil {
-		span.AddEvent("failed to get GVK for object", trace.WithAttributes(attribute.String("error", err.Error())))
-	} else {
-		span.SetAttributes(
-			attribute.String("object.group", gvk.Group),
-			attribute.String("object.version", gvk.Version),
-			attribute.String("object.kind", gvk.Kind),
-		)
-	}
+	k.objectIdentityExtactor.handleClientObjectAttrs(span, false, obj)
 
 	updateOpts := &client.UpdateOptions{}
 	for _, opt := range opts {
@@ -275,23 +274,29 @@ func (k *K8sClient) Update(ctx context.Context, obj client.Object, opts ...clien
 	return nil
 }
 
+func handlePatchOpts(span trace.Span, opts *metav1.PatchOptions) {
+	if opts == nil {
+		return
+	}
+	if len(opts.DryRun) > 0 {
+		span.SetAttributes(attribute.StringSlice("patchOption.dryRun", opts.DryRun))
+	}
+	if fm := opts.FieldManager; fm != "" {
+		span.SetAttributes(attribute.String("patchOption.fieldManager", fm))
+	}
+	if fv := opts.FieldValidation; fv != "" {
+		span.SetAttributes(attribute.String("patchOption.fieldValidation", fv))
+	}
+	if opts.Force != nil {
+		span.SetAttributes(attribute.Bool("patchOption.Force", *opts.Force))
+	}
+}
+
 func (k *K8sClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	sctx, span := k.tracer.Start(ctx, "Patch", trace.WithAttributes(attribute.String("object.name", obj.GetName())))
 	defer span.End()
 
-	if ns := obj.GetNamespace(); ns != "" {
-		span.SetAttributes(attribute.String("object.namespace", ns))
-	}
-	gvk, err := k.GroupVersionKindFor(obj)
-	if err != nil {
-		span.AddEvent("failed to get GVK for object", trace.WithAttributes(attribute.String("error", err.Error())))
-	} else {
-		span.SetAttributes(
-			attribute.String("object.group", gvk.Group),
-			attribute.String("object.version", gvk.Version),
-			attribute.String("object.kind", gvk.Kind),
-		)
-	}
+	k.objectIdentityExtactor.handleClientObjectAttrs(span, false, obj)
 
 	span.SetAttributes(attribute.String("patch.type", string(patch.Type())))
 
@@ -299,20 +304,7 @@ func (k *K8sClient) Patch(ctx context.Context, obj client.Object, patch client.P
 	for _, opt := range opts {
 		opt.ApplyToPatch(patchOpts)
 	}
-	metav1PatchOpts := patchOpts.AsPatchOptions()
-
-	if len(metav1PatchOpts.DryRun) > 0 {
-		span.SetAttributes(attribute.StringSlice("patchOption.dryRun", metav1PatchOpts.DryRun))
-	}
-	if fm := metav1PatchOpts.FieldManager; fm != "" {
-		span.SetAttributes(attribute.String("patchOption.fieldManager", fm))
-	}
-	if fv := metav1PatchOpts.FieldValidation; fv != "" {
-		span.SetAttributes(attribute.String("createOption.fieldValidation", fv))
-	}
-	if force := metav1PatchOpts.Force; force != nil {
-		span.SetAttributes(attribute.Bool("createOption.force", *force))
-	}
+	handlePatchOpts(span, patchOpts.AsPatchOptions())
 
 	if err := k.inner.Patch(sctx, obj, patch, opts...); err != nil {
 		reason := apierrors.ReasonForError(err)
@@ -326,8 +318,28 @@ func (k *K8sClient) Patch(ctx context.Context, obj client.Object, patch client.P
 }
 
 func (k *K8sClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
-	// TODO implement me
-	panic("implement me")
+	sctx, span := k.tracer.Start(ctx, "DeleteAllOf")
+	defer span.End()
+
+	k.objectIdentityExtactor.handleClientObjectAttrs(span, false, obj)
+
+	delOpts := &client.DeleteAllOfOptions{}
+	for _, opt := range opts {
+		opt.ApplyToDeleteAllOf(delOpts)
+	}
+
+	handleListOpts(span, &delOpts.ListOptions)
+	handleDeleteOptions(span, &delOpts.DeleteOptions)
+
+	if err := k.inner.DeleteAllOf(sctx, obj, opts...); err != nil {
+		reason := apierrors.ReasonForError(err)
+		span.AddEvent("failed to run DeleteAllOf")
+		span.SetAttributes(attribute.String("reasonForError", string(reason)))
+		SetSpanErr(span, err)
+		return err
+	}
+
+	return nil
 }
 
 func (k *K8sClient) RESTMapper() meta.RESTMapper {
