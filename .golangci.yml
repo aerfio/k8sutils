@@ -79,6 +79,7 @@ linters-settings:
       - hugeParam
       - paramTypeCombine # automatically fixed by gofumpt
       - typeDefFirst
+      - whyNoLint
   revive:
     rules:
       - name: indent-error-flow
