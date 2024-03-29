@@ -14,7 +14,7 @@ ${GOFUMPT}:
 	GOBIN=${GOBIN} go install mvdan.cc/gofumpt@${GOFUMPT_VERSION}
 	mv bin/gofumpt ${GOFUMPT}
 
-GCI_VERSION = v0.12.1
+GCI_VERSION = v0.13.3
 GCI = bin/gci-${GCI_VERSION}
 ${GCI}:
 	GOBIN=${GOBIN} go install github.com/daixiang0/gci@${GCI_VERSION}
@@ -23,7 +23,7 @@ ${GCI}:
 .PHONY: fmt
 fmt: ${GOFUMPT} ${GCI}
 	$(GOFUMPT) -w -extra .
-	$(GCI) write . --skip-generated -s standard -s default -s "prefix(${shell go list -m})" -s blank -s dot --custom-order --skip-vendor
+	$(GCI) write . --skip-generated -s standard -s default -s localmodule -s blank -s dot --custom-order --skip-vendor
 
 .PHONY: test
 test:
