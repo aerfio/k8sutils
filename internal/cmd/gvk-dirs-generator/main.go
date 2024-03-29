@@ -226,9 +226,10 @@ func groupObjAndList(knownTypes map[string]reflect.Type) []string {
 	sort.Strings(nonLists)
 	for _, elem := range nonLists {
 		out = append(out, elem)
-		if slices.Contains(lists, elem+"List") {
-			out = append(out, elem+"List")
-			idx := slices.Index(lists, elem+"List")
+
+		if listElem := fmt.Sprintf("%sList", elem); slices.Contains(lists, listElem) {
+			out = append(out, listElem)
+			idx := slices.Index(lists, listElem)
 			lists = append(lists[:idx], lists[idx+1:]...)
 		}
 	}

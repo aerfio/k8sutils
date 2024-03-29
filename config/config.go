@@ -15,7 +15,7 @@ func GetConfig() (config *rest.Config, configErr error) {
 	// If the recommended kubeconfig env variable is not specified,
 	// try the in-cluster config.
 	kubeconfigPath := os.Getenv(clientcmd.RecommendedConfigPathEnvVar)
-	if len(kubeconfigPath) == 0 {
+	if kubeconfigPath == "" {
 		c, err := rest.InClusterConfig()
 		if err == nil {
 			return c, nil

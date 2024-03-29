@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -19,10 +20,7 @@ func main() {
 	}
 }
 
-var (
-	newlineSpaceNewlineRegexp = regexp.MustCompile(`. +\n|\t`)
-	tabRegexp                 = regexp.MustCompile(`\t`)
-)
+var newlineSpaceNewlineRegexp = regexp.MustCompile(`. +\n|\t`)
 
 func run() error {
 	content, helpRequested, err := getInput(os.Args)
@@ -49,7 +47,6 @@ There are 2 main reasons for this behaviour: tab (\t) characters and the trailin
 
 	keysWithInvalidValues := []string{}
 	for key, value := range configMap.Data {
-		// fmt.Println(strings.NewReplacer(" ", ".").Replace(value))
 		val, foundInvalidParts := highlightInvalidParts(value)
 		if foundInvalidParts {
 			color.HiGreen("key: %s", key)
@@ -62,9 +59,9 @@ There are 2 main reasons for this behaviour: tab (\t) characters and the trailin
 	case 0:
 		return nil
 	case 1:
-		return fmt.Errorf(color.RedString("data key %s contains characters that make configMap unreadable, they are highlighted in red color. For more info run `cmwv help`", keysWithInvalidValues[0]))
+		return errors.New(color.RedString("data key %s contains characters that make configMap unreadable, they are highlighted in red color. For more info run `cmwv help`", keysWithInvalidValues[0]))
 	default:
-		return fmt.Errorf(color.RedString("data keys %s contain characters that make configMap unreadable, they are highlighted in red color. For more info run `cmwv help`", strings.Join(keysWithInvalidValues, ",")))
+		return errors.New(color.RedString("data keys %s contain characters that make configMap unreadable, they are highlighted in red color. For more info run `cmwv help`", strings.Join(keysWithInvalidValues, ",")))
 	}
 }
 
@@ -86,10 +83,10 @@ func highlightInvalidParts(input string) (string, bool) {
 func getInput(osArgs []string) ([]byte, bool, error) {
 	switch l := len(osArgs); l {
 	case 1:
-		return nil, false, fmt.Errorf("Please specify path to file with configMap as a first argument, or a \"-\" to read configMap from stdin")
+		return nil, false, fmt.Errorf("Please specify path to file with configMap as a first argument, or a \"-\" to read configMap from stdin") //nolint:stylecheck
 	case 2: // nothing
 	default:
-		return nil, false, fmt.Errorf(`Provided %d arguments, please provide only 1, either a path to a file with Kubernetes configMap or "-" for stdin`, l-1)
+		return nil, false, fmt.Errorf(`Provided %d arguments, please provide only 1, either a path to a file with Kubernetes configMap or "-" for stdin`, l-1) //nolint:stylecheck
 	}
 
 	inputArg := os.Args[1]
