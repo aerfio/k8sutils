@@ -102,7 +102,7 @@ func (k *K8sSubresourceClient) Patch(ctx context.Context, obj client.Object, pat
 	// this ignores subResourceBody field of SubResourcePatchOptions, but it's on purpose, it would be too big to fit into span attribute
 	handlePatchOpts(span, subResOpt.AsPatchOptions())
 
-	if err := k.inner.Patch(sctx, obj, opts...); err != nil {
+	if err := k.inner.Patch(sctx, obj, patch, opts...); err != nil {
 		reason := apierrors.ReasonForError(err)
 		span.AddEvent("failed to create a subresource")
 		span.SetAttributes(attribute.String("reasonForError", string(reason)))
