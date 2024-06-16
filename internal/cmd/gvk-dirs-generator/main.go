@@ -193,7 +193,7 @@ func run() error {
 	} {
 		for _, elem := range input.versionedPackageFns {
 			pckg := fmt.Sprintf("%s%sgvk", input.pckgRoot, elem.gv.Version)
-			outFile := fmt.Sprintf("./%s/%s.go", pckg, pckg)
+			outFile := fmt.Sprintf("./gvks/%s/%s.go", pckg, pckg)
 			if err := createPackage(pckg, fmt.Sprintf("k8s.io/api/%s/%s", input.pckgRoot, elem.gv.Version), elem.gv, elem.ignoredKinds, outFile, elem.addToSchemeFn); err != nil {
 				return err
 			}
@@ -262,7 +262,7 @@ func createPackage(pckg, k8sPackage string, gv schema.GroupVersion, ignoreKinds 
 		}
 	}
 
-	if err := os.Mkdir("./"+filepath.Dir(outFilePath), os.FileMode(0o755)); err != nil {
+	if err := os.MkdirAll("./"+filepath.Dir(outFilePath), os.FileMode(0o755)); err != nil {
 		if !errors.Is(err, os.ErrExist) {
 			return err
 		}

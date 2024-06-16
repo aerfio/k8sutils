@@ -2,7 +2,7 @@ CURRENT_DIR = $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 GOBIN = $(CURRENT_DIR)/bin
 
 .PHONY: all
-all: generate fmt test
+all: generate fmt test lint
 
 .PHONY: generate
 generate:
@@ -34,7 +34,7 @@ bin/golangci-lint-install.sh:
 	curl -fL "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh" -o "$@"
 	chmod +x "$@"
 
-GOLANGCI_LINT_VERSION = v1.57.1
+GOLANGCI_LINT_VERSION = v1.59.1
 GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint-${GOLANGCI_LINT_VERSION}
 ${GOLANGCI_LINT}: bin/golangci-lint-install.sh
 	./bin/golangci-lint-install.sh -b $(abspath bin) ${GOLANGCI_LINT_VERSION}
