@@ -1,4 +1,4 @@
-package tracing
+package k8stracing
 
 import (
 	"context"
@@ -38,9 +38,8 @@ func handleGetOptions(span trace.Span, opts ...client.GetOption) {
 	}
 
 	getOpts := &client.GetOptions{}
-	for _, opt := range opts {
-		opt.ApplyToGet(getOpts)
-	}
+
+	getOpts.ApplyOptions(opts)
 	metav1GetOpts := getOpts.AsGetOptions()
 	if resVer := metav1GetOpts.ResourceVersion; resVer != "" {
 		span.SetAttributes(attribute.String("getOption.resourceVersion", resVer))
@@ -52,10 +51,10 @@ func (k *K8sClient) Get(ctx context.Context, key client.ObjectKey, obj client.Ob
 	defer span.End()
 
 	getOpts := &client.GetOptions{}
-	for _, opt := range opts {
-		opt.ApplyToGet(getOpts)
-	}
+	getOpts.ApplyOptions(opts)
 	handleGetOptions(span, opts...)
+
+	k.objectIdentityExtactor.handleClientObjectAttrs(span, false, obj)
 
 	if err := k.inner.Get(sctx, key, obj, opts...); err != nil {
 		reason := apierrors.ReasonForError(err)
@@ -65,16 +64,10 @@ func (k *K8sClient) Get(ctx context.Context, key client.ObjectKey, obj client.Ob
 		return err
 	}
 
-	span.AddEvent("successfully got an object")
-	gvk := obj.GetObjectKind().GroupVersionKind()
-
 	span.SetAttributes(
 		attribute.String("object.uuid", string(obj.GetUID())),
 		attribute.String("object.resourceVersion", obj.GetResourceVersion()),
 		attribute.Int64("object.generation", obj.GetGeneration()),
-		attribute.String("object.group", gvk.Group),
-		attribute.String("object.version", gvk.Version),
-		attribute.String("object.kind", gvk.Kind),
 	)
 
 	return nil
@@ -111,16 +104,7 @@ func (k *K8sClient) List(ctx context.Context, list client.ObjectList, opts ...cl
 	}
 	handleListOpts(span, listOpts)
 
-	gvk, err := k.GroupVersionKindFor(list)
-	if err != nil {
-		span.AddEvent("failed to get GVK for list object", trace.WithAttributes(attribute.String("error", err.Error())))
-	} else {
-		span.SetAttributes(
-			attribute.String("list.group", gvk.Group),
-			attribute.String("list.version", gvk.Version),
-			attribute.String("list.kind", gvk.Kind),
-		)
-	}
+	k.objectIdentityExtactor.handleClientObjectListAttrs(span, list)
 
 	if err := k.inner.List(sctx, list, opts...); err != nil {
 		reason := apierrors.ReasonForError(err)
@@ -142,9 +126,7 @@ func handleCreateOptions(span trace.Span, opts ...client.CreateOption) {
 	}
 
 	createOpts := &client.CreateOptions{}
-	for _, opt := range opts {
-		opt.ApplyToCreate(createOpts)
-	}
+	createOpts.ApplyOptions(opts)
 
 	metav1CreateOpts := createOpts.AsCreateOptions()
 	if len(metav1CreateOpts.DryRun) > 0 {
@@ -163,17 +145,7 @@ func (k *K8sClient) Create(ctx context.Context, obj client.Object, opts ...clien
 	defer span.End()
 
 	handleCreateOptions(span, opts...)
-
-	gvk, err := k.GroupVersionKindFor(obj)
-	if err != nil {
-		span.AddEvent("failed to get GVK for object", trace.WithAttributes(attribute.String("error", err.Error())))
-	} else {
-		span.SetAttributes(
-			attribute.String("object.group", gvk.Group),
-			attribute.String("object.version", gvk.Version),
-			attribute.String("object.kind", gvk.Kind),
-		)
-	}
+	k.objectIdentityExtactor.handleClientObjectAttrs(span, false, obj)
 
 	if err := k.inner.Create(sctx, obj, opts...); err != nil {
 		reason := apierrors.ReasonForError(err)
@@ -192,9 +164,7 @@ func handleDeleteOptions(span trace.Span, opts ...client.DeleteOption) {
 	}
 
 	deleteOpts := &client.DeleteOptions{}
-	for _, opt := range opts {
-		opt.ApplyToDelete(deleteOpts)
-	}
+	deleteOpts.ApplyOptions(opts)
 
 	if len(deleteOpts.DryRun) > 0 {
 		span.SetAttributes(attribute.StringSlice("deleteOption.dryRun", deleteOpts.DryRun))
@@ -258,9 +228,7 @@ func (k *K8sClient) Update(ctx context.Context, obj client.Object, opts ...clien
 	k.objectIdentityExtactor.handleClientObjectAttrs(span, false, obj)
 
 	updateOpts := &client.UpdateOptions{}
-	for _, opt := range opts {
-		opt.ApplyToUpdate(updateOpts)
-	}
+	updateOpts.ApplyOptions(opts)
 	handleUpdateOpts(span, updateOpts.AsUpdateOptions())
 
 	if err := k.inner.Update(sctx, obj, opts...); err != nil {
@@ -301,9 +269,7 @@ func (k *K8sClient) Patch(ctx context.Context, obj client.Object, patch client.P
 	span.SetAttributes(attribute.String("patch.type", string(patch.Type())))
 
 	patchOpts := &client.PatchOptions{}
-	for _, opt := range opts {
-		opt.ApplyToPatch(patchOpts)
-	}
+	patchOpts.ApplyOptions(opts)
 	handlePatchOpts(span, patchOpts.AsPatchOptions())
 
 	if err := k.inner.Patch(sctx, obj, patch, opts...); err != nil {
@@ -324,9 +290,7 @@ func (k *K8sClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...
 	k.objectIdentityExtactor.handleClientObjectAttrs(span, false, obj)
 
 	delOpts := &client.DeleteAllOfOptions{}
-	for _, opt := range opts {
-		opt.ApplyToDeleteAllOf(delOpts)
-	}
+	delOpts.ApplyOptions(opts)
 
 	handleListOpts(span, &delOpts.ListOptions)
 	handleDeleteOptions(span, &delOpts.DeleteOptions)

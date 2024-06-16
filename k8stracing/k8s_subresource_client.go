@@ -1,4 +1,4 @@
-package tracing
+package k8stracing
 
 import (
 	"context"
