@@ -1,6 +1,6 @@
 # k8sutils
 
-Package `aerf.io/k8sutils` exports GVKs of particular types from `k8s.io/api` package. Apart from that there are some useful utility functions in the root package.
+Package `aerf.io/k8sutils/gvks` exports GVKs of particular types from `k8s.io/api` package. Apart from that there are some useful utility functions in the root package, [k8stracing](./k8stracing/) and [utilreconcilers](./utilreconcilers/) dirs and some binaries in [cmd](./cmd/) dir.
 
 ## Contributing
 
