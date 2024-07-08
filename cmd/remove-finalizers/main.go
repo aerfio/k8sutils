@@ -8,7 +8,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -18,7 +17,7 @@ import (
 func main() {
 	obj := []*unstructured.Unstructured{}
 
-	if err := yaml.NewYAMLOrJSONDecoder(os.Stdin, 2048).Decode(obj); err != nil {
+	if err := utilyaml.NewYAMLOrJSONDecoder(os.Stdin, 2048).Decode(obj); err != nil {
 		panic(err)
 	}
 	objs, err := readObjects(os.Stdin)
@@ -68,7 +67,7 @@ func readObjects(r io.Reader) ([]*unstructured.Unstructured, error) {
 
 		if obj.IsList() {
 			err = obj.EachListItem(func(item runtime.Object) error {
-				obj := item.(*unstructured.Unstructured)
+				obj := item.(*unstructured.Unstructured) //nolint:errcheck,forcetypeassert // item must be *unstructured.unstructured
 				objects = append(objects, obj)
 				return nil
 			})
