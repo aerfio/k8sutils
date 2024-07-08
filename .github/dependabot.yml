@@ -8,3 +8,9 @@ updates:
       k8s-deps:
         patterns:
           - "k8s.io/*"
+      otel-dependencies:
+        patterns:
+          - "go.opentelemetry.io/*"
+      golang-org-x:
+        patterns:
+          - "golang.org/x/*"
