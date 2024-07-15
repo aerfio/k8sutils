@@ -1,0 +1,3 @@
+- effect: NoSchedule
+  key: some-key
+  value: "true"
