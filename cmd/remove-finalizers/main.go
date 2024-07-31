@@ -5,28 +5,19 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"aerf.io/k8sutils/config"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func main() {
-	obj := []*unstructured.Unstructured{}
-
-	if err := utilyaml.NewYAMLOrJSONDecoder(os.Stdin, 2048).Decode(obj); err != nil {
-		panic(err)
-	}
 	objs, err := readObjects(os.Stdin)
 	if err != nil {
 		panic(err)
-	}
-
-	for i := range objs {
-		objs[i].SetFinalizers([]string{})
 	}
 
 	restCfg := config.GetConfigOrDie()
@@ -35,13 +26,18 @@ func main() {
 		panic(err)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	for _, obj := range objs {
 		accessor := obj.GetName()
 		if ns := obj.GetNamespace(); ns != "" {
 			accessor = fmt.Sprintf("%s/%s", obj.GetName(), ns)
 		}
-		fmt.Printf("removing finalizers from %s %s", obj.GetObjectKind().GroupVersionKind().Kind, accessor)
-		if err := cli.Update(context.Background(), obj); err != nil {
+		obj.SetFinalizers([]string{})
+
+		fmt.Printf("removing finalizers from %s %s\n", obj.GetObjectKind().GroupVersionKind().Kind, accessor)
+		if err := cli.Update(ctx, obj); err != nil {
 			panic(err)
 		}
 	}
