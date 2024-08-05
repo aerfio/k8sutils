@@ -11,19 +11,21 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	toolscache "k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // HIGHLY EXPERIMENTAL!
-func NewDebugCacheTransformer(httpSrvAddr string) *DebugTransform {
+func NewDebugCacheTransformer(httpSrvAddr string, scheme *runtime.Scheme) *DebugTransform {
 	return &DebugTransform{
 		cache:       make(map[schema.GroupVersionKind][]string),
 		mu:          new(sync.Mutex),
 		httpSrvAddr: httpSrvAddr,
+		scheme:      scheme,
 	}
 }
 
@@ -31,6 +33,7 @@ type DebugTransform struct {
 	cache       map[schema.GroupVersionKind][]string
 	mu          *sync.Mutex
 	httpSrvAddr string
+	scheme      *runtime.Scheme
 }
 
 func (dt *DebugTransform) NeedLeaderElection() bool {
@@ -89,17 +92,24 @@ func (dt *DebugTransform) TransformFn(fns ...toolscache.TransformFunc) toolscach
 			}
 		}
 
-		if obj, err := meta.Accessor(obj); err == nil {
-			if robj, ok := obj.(client.Object); ok {
-				dt.mu.Lock()
-				defer dt.mu.Unlock()
-				nnt := dt.cache[robj.GetObjectKind().GroupVersionKind()]
-				objType := reflect.TypeOf(obj).String()
-				if !slices.Contains(nnt, objType) {
-					nnt = append(nnt, objType)
+		if robj, ok := obj.(client.Object); ok {
+			dt.mu.Lock()
+			defer dt.mu.Unlock()
+			gvk := robj.GetObjectKind().GroupVersionKind()
+			if gvk == (schema.GroupVersionKind{}) {
+				gvk, err = apiutil.GVKForObject(robj, dt.scheme)
+				if err != nil {
+					return nil, err
 				}
-				dt.cache[robj.GetObjectKind().GroupVersionKind()] = nnt
 			}
+
+			nnt := dt.cache[robj.GetObjectKind().GroupVersionKind()]
+			typeOfObj := reflect.TypeOf(obj)
+			objKey := fmt.Sprintf("%s.%s", typeOfObj.PkgPath(), typeOfObj.Name())
+			if !slices.Contains(nnt, objKey) {
+				nnt = append(nnt, objKey)
+			}
+			dt.cache[robj.GetObjectKind().GroupVersionKind()] = nnt
 		}
 
 		return obj, nil
