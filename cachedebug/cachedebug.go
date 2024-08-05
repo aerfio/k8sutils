@@ -47,7 +47,11 @@ func (dt *DebugTransform) getCache() map[schema.GroupVersionKind][]string {
 func (dt *DebugTransform) Start(ctx context.Context) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/cachedebug", func(w http.ResponseWriter, r *http.Request) {
-		out, err := json.Marshal(dt.getCache()) // nolint:staticcheck
+		marshallable := make(map[string][]string)
+		for key, val := range dt.getCache() {
+			marshallable[key.String()] = val
+		}
+		out, err := json.Marshal(marshallable)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to marshal internal debug cache content: %s", err), http.StatusInternalServerError)
 			return
