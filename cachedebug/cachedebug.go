@@ -34,7 +34,7 @@ type DebugTransform struct {
 }
 
 func (dt *DebugTransform) NeedLeaderElection() bool {
-	//caches are filled in only in leader
+	// caches are filled in only in leader
 	return true
 }
 
@@ -47,20 +47,23 @@ func (dt *DebugTransform) getCache() map[schema.GroupVersionKind][]string {
 func (dt *DebugTransform) Start(ctx context.Context) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/cachedebug", func(w http.ResponseWriter, r *http.Request) {
-		out, err := json.Marshal(dt.getCache())
+		out, err := json.Marshal(dt.getCache()) // nolint:staticcheck
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to marshal internal debug cache content: %s", err), http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(out)
+		w.Write(out) // nolint:errcheck
 	})
-	srv := http.Server{Addr: dt.httpSrvAddr, Handler: mux}
+	srv := http.Server{ // nolint:gosec // this shouldnt be exposed so lint err doesnt matter
+		Addr:    dt.httpSrvAddr,
+		Handler: mux,
+	}
 	go func() {
 		<-ctx.Done()
 		sctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		srv.Shutdown(sctx)
+		srv.Shutdown(sctx) // nolint:errcheck
 	}()
 
 	if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {

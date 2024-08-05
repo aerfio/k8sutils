@@ -71,6 +71,8 @@ func readObjects(r io.Reader) ([]*unstructured.Unstructured, error) {
 				return objects, err
 			}
 			continue
+		} else {
+			objects = append(objects, obj)
 		}
 	}
 

@@ -20,12 +20,83 @@ func Test_readObjects(t *testing.T) {
 			object: `kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: xd`,
+  name: test`,
 			want: []*unstructured.Unstructured{
 				{
 					Object: map[string]any{
 						"kind":       "ConfigMap",
 						"apiVersion": "v1",
+						"metadata": map[string]any{
+							"name": "test",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "items split with ---",
+			object: `kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: test
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: test-2`,
+
+			want: []*unstructured.Unstructured{
+				{
+					Object: map[string]any{
+						"kind":       "ConfigMap",
+						"apiVersion": "v1",
+						"metadata": map[string]any{
+							"name": "test",
+						},
+					},
+				},
+				{
+					Object: map[string]any{
+						"kind":       "Secret",
+						"apiVersion": "v1",
+						"metadata": map[string]any{
+							"name": "test-2",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "items list",
+			object: `kind: List
+apiVersion: v1
+items: 
+- kind: ConfigMap
+  apiVersion: v1
+  metadata:
+    name: test
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: test-2`,
+
+			want: []*unstructured.Unstructured{
+				{
+					Object: map[string]any{
+						"kind":       "ConfigMap",
+						"apiVersion": "v1",
+						"metadata": map[string]any{
+							"name": "test",
+						},
+					},
+				},
+				{
+					Object: map[string]any{
+						"kind":       "Secret",
+						"apiVersion": "v1",
+						"metadata": map[string]any{
+							"name": "test-2",
+						},
 					},
 				},
 			},
@@ -33,8 +104,8 @@ metadata:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Log(tt.object)
-			got, err := readObjects(strings.NewReader(tt.object))
+			obj := strings.NewReader(tt.object)
+			got, err := readObjects(obj)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("readObjects() error = %v, wantErr %v", err, tt.wantErr)
 				return
