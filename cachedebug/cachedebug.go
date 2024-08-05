@@ -93,8 +93,7 @@ func (dt *DebugTransform) TransformFn(fns ...toolscache.TransformFunc) toolscach
 		}
 
 		if robj, ok := obj.(client.Object); ok {
-			dt.mu.Lock()
-			defer dt.mu.Unlock()
+
 			gvk := robj.GetObjectKind().GroupVersionKind()
 			if gvk == (schema.GroupVersionKind{}) {
 				gvk, err = apiutil.GVKForObject(robj, dt.scheme)
@@ -103,13 +102,15 @@ func (dt *DebugTransform) TransformFn(fns ...toolscache.TransformFunc) toolscach
 				}
 			}
 
-			nnt := dt.cache[robj.GetObjectKind().GroupVersionKind()]
-			typeOfObj := reflect.TypeOf(obj)
-			objKey := fmt.Sprintf("%s.%s", typeOfObj.PkgPath(), typeOfObj.Name())
+			dt.mu.Lock()
+			defer dt.mu.Unlock()
+			nnt := dt.cache[gvk]
+			typeOfObj := reflect.TypeOf(robj)
+			objKey := typeOfObj.String()
 			if !slices.Contains(nnt, objKey) {
 				nnt = append(nnt, objKey)
 			}
-			dt.cache[robj.GetObjectKind().GroupVersionKind()] = nnt
+			dt.cache[gvk] = nnt
 		}
 
 		return obj, nil
