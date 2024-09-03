@@ -79,8 +79,10 @@ func (dt *DebugTransform) Start(ctx context.Context) error {
 	return nil
 }
 
-var _ manager.Runnable = &DebugTransform{}
-var _ manager.LeaderElectionRunnable = &DebugTransform{}
+var (
+	_ manager.Runnable               = &DebugTransform{}
+	_ manager.LeaderElectionRunnable = &DebugTransform{}
+)
 
 func (dt *DebugTransform) TransformFn(fns ...toolscache.TransformFunc) toolscache.TransformFunc {
 	return func(obj any) (any, error) {

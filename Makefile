@@ -8,13 +8,13 @@ all: generate fmt test lint
 generate:
 	go run ./internal/cmd/gvk-dirs-generator
 
-GOFUMPT_VERSION ?= v0.6.0
+GOFUMPT_VERSION ?= v0.7.0
 GOFUMPT = ${GOBIN}/gofumpt-${GOFUMPT_VERSION}
 ${GOFUMPT}:
 	GOBIN=${GOBIN} go install mvdan.cc/gofumpt@${GOFUMPT_VERSION}
 	mv bin/gofumpt ${GOFUMPT}
 
-GCI_VERSION = v0.13.3
+GCI_VERSION = v0.13.4
 GCI = bin/gci-${GCI_VERSION}
 ${GCI}:
 	GOBIN=${GOBIN} go install github.com/daixiang0/gci@${GCI_VERSION}
@@ -34,7 +34,7 @@ bin/golangci-lint-install.sh:
 	curl -fL "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh" -o "$@"
 	chmod +x "$@"
 
-GOLANGCI_LINT_VERSION = v1.59.1
+GOLANGCI_LINT_VERSION = v1.60.3
 GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint-${GOLANGCI_LINT_VERSION}
 ${GOLANGCI_LINT}: bin/golangci-lint-install.sh
 	./bin/golangci-lint-install.sh -b $(abspath bin) ${GOLANGCI_LINT_VERSION}
