@@ -115,7 +115,6 @@ func (k *K8sClient) List(ctx context.Context, list client.ObjectList, opts ...cl
 	}
 
 	span.AddEvent("successfully listed objects")
-	span.SetAttributes(attribute.Int("list.len", meta.LenList(list)))
 
 	return nil
 }
@@ -154,6 +153,10 @@ func (k *K8sClient) Create(ctx context.Context, obj client.Object, opts ...clien
 		SetSpanErr(span, err)
 		return err
 	}
+	span.SetAttributes(
+		attribute.String("object.uuid", string(obj.GetUID())),
+		attribute.String("object.resourceVersion", obj.GetResourceVersion()),
+	)
 
 	return nil
 }
