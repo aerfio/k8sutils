@@ -12,10 +12,10 @@ import (
 )
 
 type K8sSubresourceClient struct {
-	inner                 client.SubResourceClient
-	groupVersionKindForFn func(object runtime.Object) (schema.GroupVersionKind, error)
-	tracer                trace.Tracer
-	objectIdentityExtactor
+	inner                  client.SubResourceClient
+	groupVersionKindForFn  func(object runtime.Object) (schema.GroupVersionKind, error)
+	tracer                 trace.Tracer
+	objectIdentityExtactor *objectIdentityExtactor
 }
 
 var _ client.SubResourceClient = &K8sSubresourceClient{}
