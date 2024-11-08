@@ -18,7 +18,7 @@ type K8sClient struct {
 	inner                  client.Client
 	tracer                 trace.Tracer
 	traceProvider          trace.TracerProvider
-	objectIdentityExtactor objectIdentityExtactor
+	objectIdentityExtactor *objectIdentityExtactor
 }
 
 func NewK8sClient(inner client.Client, traceProvider trace.TracerProvider) client.Client {
@@ -26,7 +26,7 @@ func NewK8sClient(inner client.Client, traceProvider trace.TracerProvider) clien
 		inner:         inner,
 		tracer:        traceProvider.Tracer("KubernetesClient"),
 		traceProvider: traceProvider,
-		objectIdentityExtactor: objectIdentityExtactor{
+		objectIdentityExtactor: &objectIdentityExtactor{
 			groupVersionKindForFn: inner.GroupVersionKindFor,
 		},
 	}
@@ -335,8 +335,9 @@ func (k *K8sClient) Status() client.SubResourceWriter {
 
 func (k *K8sClient) SubResource(subResource string) client.SubResourceClient {
 	return &K8sSubresourceClient{
-		inner:                 k.inner.SubResource(subResource),
-		groupVersionKindForFn: k.GroupVersionKindFor,
-		tracer:                k.traceProvider.Tracer(fmt.Sprintf("KubernetesClient.subresource.%s", subResource)),
+		inner:                  k.inner.SubResource(subResource),
+		groupVersionKindForFn:  k.GroupVersionKindFor,
+		tracer:                 k.traceProvider.Tracer(fmt.Sprintf("KubernetesClient.subresource.%s", subResource)),
+		objectIdentityExtactor: k.objectIdentityExtactor,
 	}
 }
