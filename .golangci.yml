@@ -63,6 +63,10 @@ linters:
       rules:
         - name: indent-error-flow
           disabled: true
+    staticcheck:
+      checks:
+        - all
+        - -ST1005
   exclusions:
     generated: lax
     presets:
