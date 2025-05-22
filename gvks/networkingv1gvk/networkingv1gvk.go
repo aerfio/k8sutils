@@ -2,10 +2,9 @@
 package networkingv1gvk
 
 import (
-	"k8s.io/api/networking/v1"
 	"reflect"
+	"k8s.io/api/networking/v1"
 )
-
 var Ingress = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.Ingress{}).Name())
 var IngressList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.IngressList{}).Name())
 var IngressClass = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.IngressClass{}).Name())

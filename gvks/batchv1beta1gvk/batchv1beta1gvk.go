@@ -2,9 +2,8 @@
 package batchv1beta1gvk
 
 import (
-	"k8s.io/api/batch/v1beta1"
 	"reflect"
+	"k8s.io/api/batch/v1beta1"
 )
-
 var CronJob = v1beta1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1beta1.CronJob{}).Name())
 var CronJobList = v1beta1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1beta1.CronJobList{}).Name())
