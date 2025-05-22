@@ -2,10 +2,9 @@
 package rbacv1gvk
 
 import (
-	"k8s.io/api/rbac/v1"
 	"reflect"
+	"k8s.io/api/rbac/v1"
 )
-
 var ClusterRole = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.ClusterRole{}).Name())
 var ClusterRoleList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.ClusterRoleList{}).Name())
 var ClusterRoleBinding = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.ClusterRoleBinding{}).Name())

@@ -2,9 +2,8 @@
 package coordinationv1gvk
 
 import (
-	"k8s.io/api/coordination/v1"
 	"reflect"
+	"k8s.io/api/coordination/v1"
 )
-
 var Lease = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.Lease{}).Name())
 var LeaseList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.LeaseList{}).Name())

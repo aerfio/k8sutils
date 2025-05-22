@@ -2,10 +2,9 @@
 package storagev1gvk
 
 import (
-	"k8s.io/api/storage/v1"
 	"reflect"
+	"k8s.io/api/storage/v1"
 )
-
 var CSIDriver = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.CSIDriver{}).Name())
 var CSIDriverList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.CSIDriverList{}).Name())
 var CSINode = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.CSINode{}).Name())

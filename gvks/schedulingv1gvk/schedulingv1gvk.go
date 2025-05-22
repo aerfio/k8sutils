@@ -2,9 +2,8 @@
 package schedulingv1gvk
 
 import (
-	"k8s.io/api/scheduling/v1"
 	"reflect"
+	"k8s.io/api/scheduling/v1"
 )
-
 var PriorityClass = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.PriorityClass{}).Name())
 var PriorityClassList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.PriorityClassList{}).Name())

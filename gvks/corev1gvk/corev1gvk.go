@@ -2,10 +2,9 @@
 package corev1gvk
 
 import (
-	"k8s.io/api/core/v1"
 	"reflect"
+	"k8s.io/api/core/v1"
 )
-
 var Binding = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.Binding{}).Name())
 var ConfigMap = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.ConfigMap{}).Name())
 var ConfigMapList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.ConfigMapList{}).Name())

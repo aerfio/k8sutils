@@ -1,95 +1,107 @@
-run:
-  timeout: "5m"
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
-    - durationcheck
-    - exportloopref
-    - forcetypeassert
-    - gocritic
-    - makezero
-    - nosprintfhostport
     - asciicheck
     - depguard
+    - durationcheck
+    - errcheck
+    - forcetypeassert
+    - goconst
+    - gocritic
     - gosec
+    - govet
+    - makezero
+    - nosprintfhostport
     - prealloc
     - revive
+    - staticcheck
     - unconvert
     - unparam
-    - errcheck
-    - goconst
-    - govet
-    - stylecheck
-    - gosimple
     - unused
-    - staticcheck
+  settings:
+    depguard:
+      rules:
+        no-exp-slog:
+          deny:
+            - pkg: golang.org/x/exp/slog
+              desc: please use "log/slog" instead
+        no-old-yaml-pkg:
+          deny:
+            - pkg: gopkg.in/yaml.v2
+              desc: please use gopkg.in/yaml.v3, not v2
+        no-sync-atomic:
+          deny:
+            - pkg: sync/atomic
+              desc: please use type-safe atomics from go.uber.org/atomic
+        only-std-errors-pkg:
+          deny:
+            - pkg: github.com/pkg/errors
+              desc: Should be replaced by standard lib "errors" package or "fmt.Errorf" or "go.uber.org/multierr" package
+            - pkg: github.com/go-errors/errors
+              desc: Should be replaced by standard lib "errors" package or "fmt.Errorf" or "go.uber.org/multierr" package
+            - pkg: golang.org/x/xerrors
+              desc: Should be replaced by standard lib "errors" package or "fmt.Errorf" or "go.uber.org/multierr" package
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    gocritic:
+      disabled-checks:
+        - rangeValCopy
+        - unnamedResult
+        - hugeParam
+        - paramTypeCombine
+        - typeDefFirst
+        - whyNoLint
+      enabled-tags:
+        - performance
+        - diagnostic
+        - opinionated
+        - style
+        - experimental
+    revive:
+      rules:
+        - name: indent-error-flow
+          disabled: true
+    staticcheck:
+      checks:
+        - all
+        - -ST1005
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - revive
+        text: blank-imports
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
     - gci
     - gofmt
-
-linters-settings:
-  gci:
-    custom-order: true
-    sections:
-      - standard
-      - default
-      - prefix(aerf.io/k8sutils)
-      - blank
-      - dot
-    skip-generated: true
-  gofmt:
-    simplify: true
-    rewrite-rules:
-      - pattern: "interface{}"
-        replacement: "any"
-      - pattern: "a[b:len(a)]"
-        replacement: "a[b:]"
-  depguard:
-    rules:
-      no-sync-atomic:
-        deny:
-          - pkg: "sync/atomic"
-            desc: "please use type-safe atomics from go.uber.org/atomic"
-      no-old-yaml-pkg:
-        deny:
-          - pkg: "gopkg.in/yaml.v2"
-            desc: "please use gopkg.in/yaml.v3, not v2"
-      no-exp-slog:
-        deny:
-          - pkg: "golang.org/x/exp/slog"
-            desc: 'please use "log/slog" instead'
-      only-std-errors-pkg:
-        deny:
-          - pkg: "github.com/pkg/errors"
-            desc: Should be replaced by standard lib "errors" package or "fmt.Errorf" or "go.uber.org/multierr" package
-          - pkg: "github.com/go-errors/errors"
-            desc: Should be replaced by standard lib "errors" package or "fmt.Errorf" or "go.uber.org/multierr" package
-          - pkg: "golang.org/x/xerrors"
-            desc: Should be replaced by standard lib "errors" package or "fmt.Errorf" or "go.uber.org/multierr" package
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-  gocritic:
-    enabled-tags:
-      - performance
-      - diagnostic
-      - opinionated
-      - style
-      - experimental
-    disabled-checks:
-      - rangeValCopy
-      - unnamedResult
-      - hugeParam
-      - paramTypeCombine # automatically fixed by gofumpt
-      - typeDefFirst
-      - whyNoLint
-  revive:
-    rules:
-      - name: indent-error-flow
-        disabled: true
-issues:
-  exclude-use-default: true
-  exclude-rules:
-    - linters:
-        - revive
-      text: "blank-imports"
+    - gofumpt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(aerf.io/k8sutils)
+        - blank
+        - dot
+      custom-order: true
+    gofmt:
+      simplify: true
+      rewrite-rules:
+        - pattern: interface{}
+          replacement: any
+        - pattern: a[b:len(a)]
+          replacement: a[b:]
+    gofumpt:
+      extra-rules: true

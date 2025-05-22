@@ -2,10 +2,9 @@
 package appsv1beta2gvk
 
 import (
-	"k8s.io/api/apps/v1beta2"
 	"reflect"
+	"k8s.io/api/apps/v1beta2"
 )
-
 var ControllerRevision = v1beta2.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1beta2.ControllerRevision{}).Name())
 var ControllerRevisionList = v1beta2.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1beta2.ControllerRevisionList{}).Name())
 var DaemonSet = v1beta2.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1beta2.DaemonSet{}).Name())

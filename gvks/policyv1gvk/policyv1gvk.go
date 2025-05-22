@@ -2,9 +2,8 @@
 package policyv1gvk
 
 import (
-	"k8s.io/api/policy/v1"
 	"reflect"
+	"k8s.io/api/policy/v1"
 )
-
 var PodDisruptionBudget = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.PodDisruptionBudget{}).Name())
 var PodDisruptionBudgetList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.PodDisruptionBudgetList{}).Name())
