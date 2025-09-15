@@ -48,6 +48,6 @@ func (r *WithTracingReconciler) Reconcile(ctx context.Context, req reconcile.Req
 		return res, err
 	}
 
-	span.SetAttributes(attribute.Bool("requeue", res.Requeue), attribute.String("requeueAfter", res.RequeueAfter.String()))
+	span.SetAttributes(attribute.Bool("requeue", res.Requeue), attribute.String("requeueAfter", res.RequeueAfter.String())) //nolint:staticcheck // I know Requeue is deprecated
 	return res, err
 }
