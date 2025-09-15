@@ -17,7 +17,7 @@ bin/golangci-lint-install.sh:
 	curl -fL "https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh" -o "$@"
 	chmod +x "$@"
 
-GOLANGCI_LINT_VERSION = v2.1.6
+GOLANGCI_LINT_VERSION = v2.4.0
 GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint-${GOLANGCI_LINT_VERSION}
 ${GOLANGCI_LINT}: bin/golangci-lint-install.sh
 	./bin/golangci-lint-install.sh -b $(abspath bin) ${GOLANGCI_LINT_VERSION}

@@ -5,9 +5,13 @@ import (
 	"reflect"
 	"k8s.io/api/networking/v1"
 )
+var IPAddress = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.IPAddress{}).Name())
+var IPAddressList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.IPAddressList{}).Name())
 var Ingress = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.Ingress{}).Name())
 var IngressList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.IngressList{}).Name())
 var IngressClass = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.IngressClass{}).Name())
 var IngressClassList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.IngressClassList{}).Name())
 var NetworkPolicy = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.NetworkPolicy{}).Name())
 var NetworkPolicyList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.NetworkPolicyList{}).Name())
+var ServiceCIDR = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.ServiceCIDR{}).Name())
+var ServiceCIDRList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.ServiceCIDRList{}).Name())

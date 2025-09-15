@@ -161,6 +161,27 @@ func (k *K8sClient) Create(ctx context.Context, obj client.Object, opts ...clien
 	return nil
 }
 
+func (k *K8sClient) Apply(ctx context.Context, obj runtime.ApplyConfiguration, opts ...client.ApplyOption) error {
+	sctx, span := k.tracer.Start(ctx, "Apply")
+	defer span.End()
+
+	applyOpts := client.ApplyOptions{}
+	for _, opt := range opts {
+		opt.ApplyToApply(&applyOpts)
+	}
+	handlePatchOpts(span, true, applyOpts.AsPatchOptions())
+
+	if err := k.inner.Apply(sctx, obj, opts...); err != nil {
+		reason := apierrors.ReasonForError(err)
+		span.AddEvent("failed to apply an object")
+		span.SetAttributes(attribute.String("reasonForError", string(reason)))
+		SetSpanErr(span, err)
+		return err
+	}
+
+	return nil
+}
+
 func handleDeleteOptions(span trace.Span, opts ...client.DeleteOption) {
 	if len(opts) == 0 {
 		return
@@ -245,21 +266,26 @@ func (k *K8sClient) Update(ctx context.Context, obj client.Object, opts ...clien
 	return nil
 }
 
-func handlePatchOpts(span trace.Span, opts *metav1.PatchOptions) {
+func handlePatchOpts(span trace.Span, isApply bool, opts *metav1.PatchOptions) {
+	prefix := "patchOption"
+	if isApply {
+		prefix = "applyOption"
+	}
+
 	if opts == nil {
 		return
 	}
 	if len(opts.DryRun) > 0 {
-		span.SetAttributes(attribute.StringSlice("patchOption.dryRun", opts.DryRun))
+		span.SetAttributes(attribute.StringSlice(fmt.Sprintf("%s.dryRun", prefix), opts.DryRun))
 	}
 	if fm := opts.FieldManager; fm != "" {
-		span.SetAttributes(attribute.String("patchOption.fieldManager", fm))
+		span.SetAttributes(attribute.String(fmt.Sprintf("%s.fieldManager", prefix), fm))
 	}
 	if fv := opts.FieldValidation; fv != "" {
-		span.SetAttributes(attribute.String("patchOption.fieldValidation", fv))
+		span.SetAttributes(attribute.String(fmt.Sprintf("%s.fieldValidation", prefix), fv))
 	}
 	if opts.Force != nil {
-		span.SetAttributes(attribute.Bool("patchOption.Force", *opts.Force))
+		span.SetAttributes(attribute.Bool(fmt.Sprintf("%s.force", prefix), *opts.Force))
 	}
 }
 
@@ -273,7 +299,7 @@ func (k *K8sClient) Patch(ctx context.Context, obj client.Object, patch client.P
 
 	patchOpts := &client.PatchOptions{}
 	patchOpts.ApplyOptions(opts)
-	handlePatchOpts(span, patchOpts.AsPatchOptions())
+	handlePatchOpts(span, false, patchOpts.AsPatchOptions())
 
 	if err := k.inner.Patch(sctx, obj, patch, opts...); err != nil {
 		reason := apierrors.ReasonForError(err)

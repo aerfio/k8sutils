@@ -100,7 +100,7 @@ func (k *K8sSubresourceClient) Patch(ctx context.Context, obj client.Object, pat
 		opt.ApplyToSubResourcePatch(subResOpt)
 	}
 	// this ignores subResourceBody field of SubResourcePatchOptions, but it's on purpose, it would be too big to fit into span attribute
-	handlePatchOpts(span, subResOpt.AsPatchOptions())
+	handlePatchOpts(span, false, subResOpt.AsPatchOptions())
 
 	if err := k.inner.Patch(sctx, obj, patch, opts...); err != nil {
 		reason := apierrors.ReasonForError(err)

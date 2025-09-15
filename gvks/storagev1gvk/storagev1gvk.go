@@ -15,3 +15,5 @@ var StorageClass = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.StorageClas
 var StorageClassList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.StorageClassList{}).Name())
 var VolumeAttachment = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.VolumeAttachment{}).Name())
 var VolumeAttachmentList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.VolumeAttachmentList{}).Name())
+var VolumeAttributesClass = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.VolumeAttributesClass{}).Name())
+var VolumeAttributesClassList = v1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1.VolumeAttributesClassList{}).Name())
