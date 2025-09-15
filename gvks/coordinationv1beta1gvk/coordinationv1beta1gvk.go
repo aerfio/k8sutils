@@ -7,3 +7,5 @@ import (
 )
 var Lease = v1beta1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1beta1.Lease{}).Name())
 var LeaseList = v1beta1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1beta1.LeaseList{}).Name())
+var LeaseCandidate = v1beta1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1beta1.LeaseCandidate{}).Name())
+var LeaseCandidateList = v1beta1.SchemeGroupVersion.WithKind(reflect.TypeOf(&v1beta1.LeaseCandidateList{}).Name())

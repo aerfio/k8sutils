@@ -12,12 +12,12 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
-          go-version: "stable"
+          go-version-file: go.mod
       - name: verify go modules
         run: |
           set -x
@@ -29,7 +29,7 @@ jobs:
           make generate fmt test
           git diff --exit-code
   lint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       # Required: allow read access to the content for analysis.
       contents: read
@@ -41,8 +41,8 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
-          go-version: "stable"
+          go-version-file: go.mod
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.1.6
+          version: v2.4.0
