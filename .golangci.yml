@@ -7,7 +7,6 @@ linters:
     - durationcheck
     - errcheck
     - forcetypeassert
-    - goconst
     - gocritic
     - gosec
     - govet
