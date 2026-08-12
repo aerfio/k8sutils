@@ -97,7 +97,7 @@ func getInput(osArgs []string) ([]byte, bool, error) {
 		content, err := io.ReadAll(os.Stdin)
 		return content, false, err
 	default:
-		content, err := os.ReadFile(inputArg)
+		content, err := os.ReadFile(inputArg) //nolint:gosec // it's supposed to read user path
 		return content, false, err
 	}
 }

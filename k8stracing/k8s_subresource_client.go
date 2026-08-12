@@ -111,3 +111,24 @@ func (k *K8sSubresourceClient) Patch(ctx context.Context, obj client.Object, pat
 
 	return nil
 }
+
+func (k *K8sSubresourceClient) Apply(ctx context.Context, obj runtime.ApplyConfiguration, opts ...client.SubResourceApplyOption) error {
+	sctx, span := k.tracer.Start(ctx, "Apply")
+	defer span.End()
+
+	subResOpt := &client.SubResourceApplyOptions{}
+	for _, opt := range opts {
+		opt.ApplyToSubResourceApply(subResOpt)
+	}
+	// this ignores subResourceBody field of SubResourceApplyOptions, but it's on purpose, it would be too big to fit into span attribute
+	handlePatchOpts(span, true, subResOpt.AsPatchOptions())
+
+	if err := k.inner.Apply(sctx, obj, opts...); err != nil {
+		reason := apierrors.ReasonForError(err)
+		span.AddEvent("failed to apply a subresource")
+		span.SetAttributes(attribute.String("reasonForError", string(reason)))
+		SetSpanErr(span, err)
+	}
+
+	return nil
+}

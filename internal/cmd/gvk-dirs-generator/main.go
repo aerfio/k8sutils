@@ -17,8 +17,6 @@ import (
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	coordinationv1 "k8s.io/api/coordination/v1"
@@ -111,14 +109,6 @@ func run() error {
 				{
 					gv:            autoscalingv2.SchemeGroupVersion,
 					addToSchemeFn: autoscalingv2.AddToScheme,
-				},
-				{
-					gv:            autoscalingv2beta1.SchemeGroupVersion,
-					addToSchemeFn: autoscalingv2beta1.AddToScheme,
-				},
-				{
-					gv:            autoscalingv2beta2.SchemeGroupVersion,
-					addToSchemeFn: autoscalingv2beta2.AddToScheme,
 				},
 			},
 		},

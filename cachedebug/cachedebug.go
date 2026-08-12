@@ -66,7 +66,7 @@ func (dt *DebugTransform) Start(ctx context.Context) error {
 		Addr:    dt.httpSrvAddr,
 		Handler: mux,
 	}
-	go func() {
+	go func() { //nolint:gosec
 		<-ctx.Done()
 		sctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
